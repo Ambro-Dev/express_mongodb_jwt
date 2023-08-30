@@ -32,6 +32,7 @@
     "multer": "^1.4.5-lts.1",
     "multer-gridfs-storage": "^5.0.2",
     "nodemailer": "^6.9.3",
+    "prompt-sync": "^4.2.0",
     "socket.io": "^4.6.0",
     "uuid": "^8.3.2"
   },

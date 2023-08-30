@@ -18,9 +18,16 @@ const imageRoutes = require("./controllers/pictureController");
 const filesRoutes = require("./controllers/filesController");
 const Course = require("./model/Course");
 const User = require("./model/User");
+const bcrypt = require("bcrypt");
+const readline = require("readline");
 const io = require("socket.io")(http, {
   cors: {
-    origin: ["http://localhost:3000", "https://admin.socket.io"],
+    origin: [
+      "http://localhost:3000",
+      "https://future.mans.org.pl",
+      "https://www.future.mans.org.pl",
+      "http://localhost",
+    ],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -51,24 +58,24 @@ app.use(express.json());
 app.use(cookieParser());
 
 //serve static files
-app.use("/", express.static(path.join(__dirname, "/public")));
+app.use("/api/", express.static(path.join(__dirname, "/public")));
 
 // routes
-app.use("/", require("./routes/root"));
-app.use("/register", require("./routes/register"));
-app.use("/auth", require("./routes/auth"));
-app.use("/refresh", require("./routes/refresh"));
-app.use("/logout", require("./routes/logout"));
-app.use("/reset-password", require("./routes/reset-password"));
+app.use("/api", require("./routes/root"));
+app.use("/apiregister", require("./routes/register"));
+app.use("/apiauth", require("./routes/auth"));
+app.use("/apirefresh", require("./routes/refresh"));
+app.use("/apilogout", require("./routes/logout"));
+app.use("/apireset-password", require("./routes/reset-password"));
 
 app.use(verifyJWT);
-app.use("/users", require("./routes/api/users"));
-app.use("/courses", require("./routes/api/courses"));
-app.use("/conversations", require("./routes/api/conversations"));
-app.use("/events", require("./routes/api/events"));
-app.use("/profile-picture", imageRoutes);
-app.use("/files", filesRoutes);
-app.use("/admin", require("./routes/api/admin"));
+app.use("/apiusers", require("./routes/api/users"));
+app.use("/apicourses", require("./routes/api/courses"));
+app.use("/apiconversations", require("./routes/api/conversations"));
+app.use("/apievents", require("./routes/api/events"));
+app.use("/apiprofile-picture", imageRoutes);
+app.use("/apifiles", filesRoutes);
+app.use("/apiadmin", require("./routes/api/admin"));
 
 app.all("*", (req, res) => {
   res.status(404);
@@ -84,12 +91,71 @@ app.use(errorHandler);
 
 const connection = mongoose.connection;
 
-connection.once("open", () => {
-  console.log("Connected to MongoDB");
-  http.listen(PORT, () => {
-    console.log(`HTTP server listening on port ${PORT}`);
-  });
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
 });
+
+connection.once("open", async () => {
+  console.log("Connected to MongoDB");
+
+  const admin = await User.findOne({ email: "admin@mans.org.pl" }).exec();
+
+  if (!admin) {
+    let password = "";
+
+    while (password.length < 16 || !isStrongPassword(password)) {
+      password = await new Promise((resolve) => {
+        rl.question(
+          "Enter admin password (min length 16 characters, at least one uppercase, one lowercase, one digit, and one special character): ",
+          (answer) => {
+            resolve(answer);
+          }
+        );
+      });
+
+      if (password.length < 16) {
+        console.log(
+          "Password too short. Please enter a password with at least 16 characters."
+        );
+      } else if (!isStrongPassword(password)) {
+        console.log(
+          "Password does not meet complexity requirements. Please include at least one uppercase letter, one lowercase letter, one digit, and one special character."
+        );
+      }
+    }
+
+    const hashedPwd = await bcrypt.hash(password, 10);
+
+    const adminUser = await User.create({
+      email: "admin@mans.org.pl",
+      password: hashedPwd,
+      name: "Admin",
+      surname: "Admin",
+      roles: { Admin: 1001 },
+    });
+
+    await adminUser.save();
+
+    console.log("Admin user created");
+
+    http.listen(PORT, () => {
+      console.log(`HTTP server listening on port ${PORT}`);
+    });
+  } else {
+    http.listen(PORT, () => {
+      console.log(`HTTP server listening on port ${PORT}`);
+    });
+  }
+
+  rl.close(); // Close the readline interface
+});
+
+function isStrongPassword(password) {
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!#%*?&])[A-Za-z\d@$#!%*?&]+$/;
+  return passwordRegex.test(password);
+}
 
 io.on("connection", (socket) => {
   console.log("A user connected", socket.id);

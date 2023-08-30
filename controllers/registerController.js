@@ -5,7 +5,7 @@ const { body, validationResult } = require("express-validator");
 const handleNewUser =
   (body("email").isEmail(),
   // password must be at least 5 chars long
-  body("password").isLength({ min: 6 }),
+  body("password").isLength({ min: 8 }),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
