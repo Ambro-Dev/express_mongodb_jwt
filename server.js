@@ -61,21 +61,21 @@ app.use(cookieParser());
 app.use("/api/", express.static(path.join(__dirname, "/public")));
 
 // routes
-app.use("/api", require("./routes/root"));
-app.use("/apiregister", require("./routes/register"));
-app.use("/apiauth", require("./routes/auth"));
-app.use("/apirefresh", require("./routes/refresh"));
-app.use("/apilogout", require("./routes/logout"));
-app.use("/apireset-password", require("./routes/reset-password"));
+app.use("/api/", require("./routes/root"));
+app.use("/api/register", require("./routes/register"));
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/refresh", require("./routes/refresh"));
+app.use("/api/logout", require("./routes/logout"));
+app.use("/api/reset-password", require("./routes/reset-password"));
 
 app.use(verifyJWT);
-app.use("/apiusers", require("./routes/api/users"));
-app.use("/apicourses", require("./routes/api/courses"));
-app.use("/apiconversations", require("./routes/api/conversations"));
-app.use("/apievents", require("./routes/api/events"));
-app.use("/apiprofile-picture", imageRoutes);
-app.use("/apifiles", filesRoutes);
-app.use("/apiadmin", require("./routes/api/admin"));
+app.use("/api/users", require("./routes/api/users"));
+app.use("/api/courses", require("./routes/api/courses"));
+app.use("/api/conversations", require("./routes/api/conversations"));
+app.use("/api/events", require("./routes/api/events"));
+app.use("/api/profile-picture", imageRoutes);
+app.use("/api/files", filesRoutes);
+app.use("/api/admin", require("./routes/api/admin"));
 
 app.all("*", (req, res) => {
   res.status(404);
